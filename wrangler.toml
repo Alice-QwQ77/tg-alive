@@ -1,0 +1,7 @@
+name = "tg-alive-pages"
+compatibility_date = "2026-05-29"
+pages_build_output_dir = "dist"
+
+[[services]]
+binding = "TG_GATEWAY"
+service = "tg-alive-gateway"

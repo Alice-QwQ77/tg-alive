@@ -1,0 +1,14 @@
+name = "tg-alive-gateway"
+main = "src/index.ts"
+compatibility_date = "2026-05-29"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ALLOWED_ORIGINS = ""
+TG_API_ID = ""
+TG_API_HASH = ""
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "00000000000000000000000000000000"
+preview_id = "00000000000000000000000000000000"
