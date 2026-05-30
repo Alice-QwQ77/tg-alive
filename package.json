@@ -29,6 +29,7 @@
     "buffer": "^6.0.3",
     "constants-browserify": "^1.0.0",
     "crypto-browserify": "^3.12.1",
+    "dplayer": "^1.27.1",
     "events": "^3.3.0",
     "lucide-react": "^0.468.0",
     "os-browserify": "^0.3.0",

@@ -15,6 +15,37 @@ export async function readTelegramServiceCode(
   apiHash: string,
   sessionString: string
 ): Promise<TelegramServiceCodeResult> {
+  const { client, session } = createTelegramWorkerClient(apiId, apiHash, sessionString);
+
+  try {
+    await client.connect();
+    const authorized = await client.checkAuthorization();
+    if (!authorized) {
+      throw new Error("stored_session_unauthorized");
+    }
+
+    const serviceEntity = await client.getEntity(777000 as never);
+    const messages = await client.getMessages(serviceEntity as never, { limit: 1 });
+    const message = messages[0] as Api.Message | undefined;
+    const text = message?.message?.trim() || "";
+    const code = extractLoginCode(text);
+
+    return {
+      code,
+      text,
+      date: message?.date ? new Date(message.date * 1000).toISOString() : "",
+      session: session.save()
+    };
+  } finally {
+    await client.disconnect();
+  }
+}
+
+export function createTelegramWorkerClient(
+  apiId: number,
+  apiHash: string,
+  sessionString: string
+): { client: TelegramClient; session: StringSession } {
   const session = new StringSession(sessionString);
   const client = new TelegramClient(session, apiId, apiHash, {
     connection: ConnectionTCPObfuscated,
@@ -32,28 +63,12 @@ export async function readTelegramServiceCode(
     systemLangCode: "zh-CN"
   });
 
-  try {
-    await client.connect();
-    const authorized = await client.checkAuthorization();
-    if (!authorized) {
-      throw new Error("stored_session_unauthorized");
-    }
+  return { client, session };
+}
 
-    const serviceEntity = await client.getEntity(777000 as never);
-    const messages = await client.getMessages(serviceEntity as never, { limit: 1 });
-    const message = messages[0] as Api.Message | undefined;
-    const text = message?.message?.trim() || "";
-    const code = text.match(/\b\d{5,6}\b/)?.[0] || "";
-
-    return {
-      code,
-      text,
-      date: message?.date ? new Date(message.date * 1000).toISOString() : "",
-      session: session.save()
-    };
-  } finally {
-    await client.disconnect();
-  }
+function extractLoginCode(text: string): string {
+  const candidate = text.match(/(?:^|[^\d])((?:\d-?){5,7})(?=$|[^\d])/)?.[1] || "";
+  return candidate.replace(/-/g, "");
 }
 
 class WorkerFetchWebSockets {

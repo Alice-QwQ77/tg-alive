@@ -1,4 +1,5 @@
 import { readTelegramServiceCode } from "./telegram-session";
+import { handleMediaStreamRequest, handleMediaTokenRequest } from "./media-stream";
 
 interface Env {
   ALLOWED_ORIGINS?: string;
@@ -58,6 +59,14 @@ export default {
 
     if (url.pathname === "/api/telegram-code") {
       return handleTelegramCodeRequest(request, env);
+    }
+
+    if (url.pathname === "/api/media-token") {
+      return handleMediaTokenRequest(request, env);
+    }
+
+    if (url.pathname === "/api/media-stream") {
+      return handleMediaStreamRequest(request, env);
     }
 
     if (url.pathname === "/api/telegram-ws") {
@@ -342,7 +351,7 @@ function corsHeaders(request: Request, env: Env): HeadersInit {
   if (!origin || allowed.length === 0) {
     return {
       "access-control-allow-origin": origin || "*",
-      "access-control-allow-methods": "GET, PUT, DELETE, OPTIONS",
+      "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
       "access-control-allow-headers": "content-type, sec-websocket-protocol",
       vary: "Origin"
     };
@@ -355,11 +364,11 @@ function corsHeaders(request: Request, env: Env): HeadersInit {
     };
   }
 
-  return {
-    "access-control-allow-origin": origin,
-    "access-control-allow-methods": "GET, PUT, DELETE, OPTIONS",
-    "access-control-allow-headers": "content-type, sec-websocket-protocol",
-    vary: "Origin"
+    return {
+      "access-control-allow-origin": origin,
+      "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "access-control-allow-headers": "content-type, sec-websocket-protocol",
+      vary: "Origin"
   };
 }
 
