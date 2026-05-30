@@ -81,5 +81,5 @@ npm run pages:deploy
 - `GET /api/telegram-code?phone=手机号&key=同步密码` 会在 Worker 侧解密 session、读取 `777000` 最新通知、返回验证码，并在 session 变化时写回 KV。推荐把同步密码放在 `x-session-refresh-key` header，避免出现在 URL 日志里。
 - `localStorage` 只保存手机号和是否启用云端同步，不保存 Telegram session 明文。
 - KV 免费额度足够个人/小团队会话同步：免费计划包含 1 GB 存储、每天 100,000 次读、1,000 次写、1,000 次删；每个账号通常只占一个 key。
-- 这是一个文本聊天 MVP，支持登录、会话列表、消息读取、文本发送和周期刷新。
+- 当前功能覆盖登录、云端会话恢复、会话列表、消息读取、文本发送、`777000` 验证码读取和周期刷新；媒体、贴纸、文件、通话、反应、消息编辑/删除等完整 Telegram Web 能力尚未实现。
 - 使用前请确认你的使用方式符合所在地法律以及 Telegram、Cloudflare 的服务条款。
