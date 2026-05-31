@@ -1326,6 +1326,11 @@ export function App() {
               <ArrowLeft size={22} aria-hidden="true" />
             </button>
           ) : null}
+          {activeDialog ? (
+            <span className={`avatar chat-header-avatar avatar-${activeDialog.kind}`}>
+              {makeInitials(activeDialog.title)}
+            </span>
+          ) : null}
           <div className="chat-title">
             <h2>{activeDialog?.title || "选择会话"}</h2>
             {activeDialog ? (
