@@ -99,12 +99,15 @@ async function proxyTelegramWebSocket(request: Request, env: Env): Promise<Respo
   const headers = new Headers(request.headers);
   headers.delete("host");
   headers.delete("origin");
+  headers.set("host", host);
   headers.set("origin", `https://${host}`);
+  // Telegram WebSocket servers require the binary sub-protocol header;
+  // without it the /apiws endpoint returns 404 instead of upgrading.
+  headers.set("Sec-WebSocket-Protocol", "binary");
 
   const upstreamRequest = new Request(upstreamUrl, {
-    method: request.method,
-    headers,
-    signal: AbortSignal.timeout(12000)
+    method: "GET",
+    headers
   });
 
   const response = await fetch(upstreamRequest);

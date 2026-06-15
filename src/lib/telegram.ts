@@ -8,6 +8,50 @@ if (!globalThis.Buffer) {
   globalThis.Buffer = Buffer;
 }
 
+// Intercept the global WebSocket constructor so that ALL WebSocket connections
+// to Telegram DC servers are routed through our Worker proxy (/api/telegram-ws).
+// This is more reliable than GramJS's networkSocket option because
+// ConnectionTCPObfuscated may create sockets through a code path that
+// bypasses the PromisedWebSockets.getWebSocketLink override.
+const OriginalWebSocket = window.WebSocket;
+
+function makeProxyUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.endsWith(".web.telegram.org")) {
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const params = new URLSearchParams({
+        host: parsed.hostname,
+        port: parsed.port || "443",
+        test: parsed.pathname.includes("_test") ? "1" : "0"
+      });
+      return `${wsProtocol}//${window.location.host}${apiUrl("/telegram-ws")}?${params.toString()}`;
+    }
+  } catch {
+    // not a valid URL or not a Telegram host — pass through
+  }
+  return url;
+}
+
+// Override the global WebSocket constructor
+(window as unknown as Record<string, unknown>).WebSocket = function (
+  this: WebSocket,
+  url: string,
+  protocols?: string | string[]
+) {
+  const proxyUrl = makeProxyUrl(url);
+  if (protocols !== undefined) {
+    return new OriginalWebSocket(proxyUrl, protocols);
+  }
+  return new OriginalWebSocket(proxyUrl);
+} as unknown as typeof WebSocket;
+
+(window as unknown as Record<string, unknown>).WebSocket.prototype = OriginalWebSocket.prototype;
+(window as unknown as Record<string, unknown>).WebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
+(window as unknown as Record<string, unknown>).WebSocket.OPEN = OriginalWebSocket.OPEN;
+(window as unknown as Record<string, unknown>).WebSocket.CLOSING = OriginalWebSocket.CLOSING;
+(window as unknown as Record<string, unknown>).WebSocket.CLOSED = OriginalWebSocket.CLOSED;
+
 export interface ClientCredentials {
   apiId: number;
   apiHash: string;
@@ -87,8 +131,7 @@ export function createTelegramRuntime(credentials: ClientCredentials): TelegramR
   const session = new StringSession(credentials.session || "");
   const client = new TelegramClient(session, credentials.apiId, credentials.apiHash, {
     connection: ConnectionTCPObfuscated,
-    networkSocket: RoutedWebSockets,
-    useWSS: window.location.protocol === "https:",
+    useWSS: true,
     connectionRetries: 4,
     requestRetries: 3,
     retryDelay: 1200,
