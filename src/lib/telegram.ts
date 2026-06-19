@@ -33,8 +33,7 @@ function makeProxyUrl(url: string): string {
   return url;
 }
 
-// Override the global WebSocket constructor
-(window as unknown as Record<string, unknown>).WebSocket = function (
+const ProxiedWebSocket = function (
   this: WebSocket,
   url: string,
   protocols?: string | string[]
@@ -46,11 +45,16 @@ function makeProxyUrl(url: string): string {
   return new OriginalWebSocket(proxyUrl);
 } as unknown as typeof WebSocket;
 
-(window as unknown as Record<string, unknown>).WebSocket.prototype = OriginalWebSocket.prototype;
-(window as unknown as Record<string, unknown>).WebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
-(window as unknown as Record<string, unknown>).WebSocket.OPEN = OriginalWebSocket.OPEN;
-(window as unknown as Record<string, unknown>).WebSocket.CLOSING = OriginalWebSocket.CLOSING;
-(window as unknown as Record<string, unknown>).WebSocket.CLOSED = OriginalWebSocket.CLOSED;
+Object.defineProperties(ProxiedWebSocket, {
+  prototype: { value: OriginalWebSocket.prototype },
+  CONNECTING: { value: OriginalWebSocket.CONNECTING },
+  OPEN: { value: OriginalWebSocket.OPEN },
+  CLOSING: { value: OriginalWebSocket.CLOSING },
+  CLOSED: { value: OriginalWebSocket.CLOSED }
+});
+
+// Override the global WebSocket constructor.
+window.WebSocket = ProxiedWebSocket;
 
 export interface ClientCredentials {
   apiId: number;
